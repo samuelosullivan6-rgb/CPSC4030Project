@@ -1,5 +1,5 @@
 // View E — speed by sequence: compact box plot of drift-corrected mean step per cell segment.
-import { COL, TEXT_COL, RED, lineOf, box, showTip, hideTip, matrixRows, groupBreaks, fmt1, describe } from "../common.js?v=20261117c";
+import { COL, TEXT_COL, RED, lineOf, box, showTip, hideTip, matrixRows, groupBreaks, fmt1, describe } from "../common.js?v=20261117e";
 
 const XMAX = 75;
 

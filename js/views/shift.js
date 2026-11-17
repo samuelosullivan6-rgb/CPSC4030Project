@@ -1,5 +1,5 @@
 // View B — stage-shift timeline: sequences x time heatmap of the shared movement of all cells.
-import { COL, TEXT_COL, RED, DARK_RED, short, lineOf, hours, box, showTip, hideTip, matrixRows, groupBreaks, fmt1, MAX_HOURS, describe, rowFont } from "../common.js?v=20261117c";
+import { COL, TEXT_COL, RED, DARK_RED, short, lineOf, hours, box, showTip, hideTip, matrixRows, groupBreaks, fmt1, MAX_HOURS, describe, rowFont } from "../common.js?v=20261117e";
 
 const VMAX = 120; // px; larger shifts share the darkest color
 const color = d3.scaleLinear([0, 30, 60, 90, VMAX], ["#ffffff", "#f3d3cf", "#e0806f", "#c8322b", "#7a1410"]).clamp(true);
@@ -81,7 +81,7 @@ export function shiftView(el, app) {
     lineWideShifts(seqs);
     describe(svg, "Heatmap of the shared movement of all cells in each frame, one row per sequence grouped by cell line, " +
       "time on the horizontal axis. Microscope stage shifts appear as dark vertical stripes that hit most fields of a cell line " +
-      "in the same frame, for example all 9 MCF10A fields at about 86 hours and 4 of 6 MDA-MB-231 fields at about 12 hours. " +
+      "in the same frame, for example all 9 MCF10A fields at about 86 hours and all 6 MDA-MB-231 fields at about 12 hours. " +
       "Hatched gray marks frames with no annotated cells.");
     canvas.attr("aria-hidden", "true");
 

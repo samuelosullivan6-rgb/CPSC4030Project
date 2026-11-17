@@ -21,7 +21,7 @@ https://samuelosullivan6-rgb.github.io/CPSC4030Project/
 - **B (stage shifts):** each row is one video. Dark vertical stripes are moments where *every* cell moved the same
   way at once, which means the microscope stage moved, not the cells.
   - Point at the **9/9** marker: all nine MCF10A fields shift at the same frame (about 86 h). That's a plate-level event.
-  - MDA-MB-231 does the same at about 12 h (4/6 fields).
+  - MDA-MB-231 does the same at about 12 h (6/6 fields).
 - **A (growth):** log scale, so a straight line means steady exponential growth. Most cultures grow many-fold;
   the **"slow"** labels mark the ones that barely grow (MDA-MB-231 F3/F4, U87 F3/F4).
 

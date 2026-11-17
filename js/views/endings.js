@@ -1,5 +1,5 @@
 // View F — how cell segments end: 100% stacked bar per sequence.
-import { END_COL, RED, TEXT_COL, lineOf, box, showTip, hideTip, matrixRows, fmtPct, describe, rowFont } from "../common.js?v=20261117c";
+import { END_COL, RED, TEXT_COL, lineOf, box, showTip, hideTip, matrixRows, fmtPct, describe, rowFont } from "../common.js?v=20261117e";
 
 export function endingsView(el, app) {
   const svg = d3.select(el).append("svg");

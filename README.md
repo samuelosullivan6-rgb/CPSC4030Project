@@ -55,7 +55,7 @@ served from the repo root; `.nojekyll` turns off Jekyll processing.
 
 ## Releasing a change
 
-Browsers (and GitHub Pages, which caches for 10 minutes) can mix old and new JS modules. After changing any JS or CSS,
+Browsers (and GitHub Pages, which caches for 10 minutes) can mix old and new JS modules. After changing any JS, CSS or data file,
 bump the `?v=` tag everywhere so every file is fetched fresh:
 
 ```bash

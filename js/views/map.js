@@ -1,5 +1,5 @@
 // View C — track map: cell paths of the selected sequence in image coordinates.
-import { COL, TEXT_COL, RED, DARK_RED, INK, GRAY, END_COL, IMG_W, IMG_H, lineOf, hours, box, showTip, hideTip, fmt1, describe } from "../common.js?v=20261117c";
+import { COL, TEXT_COL, RED, DARK_RED, INK, GRAY, END_COL, IMG_W, IMG_H, lineOf, hours, box, showTip, hideTip, fmt1, describe } from "../common.js?v=20261117e";
 
 const END_SYMBOL = { 2: d3.symbolTriangle, 3: d3.symbolX };   // left image, lost mid-image
 

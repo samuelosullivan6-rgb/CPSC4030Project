@@ -1,5 +1,5 @@
 // View A — growth: cell count over time, one panel per cell line, log2 y-axis.
-import { COL, TEXT_COL, RED, short, lineOf, hours, box, showTip, hideTip, rollingMedian, MAX_HOURS, describe } from "../common.js?v=20261117c";
+import { COL, TEXT_COL, RED, short, lineOf, hours, box, showTip, hideTip, rollingMedian, MAX_HOURS, describe } from "../common.js?v=20261117e";
 
 export function growthView(el, app) {
   const svg = d3.select(el).append("svg");

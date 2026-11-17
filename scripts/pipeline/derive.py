@@ -60,9 +60,24 @@ def segments(df):
     return df
 
 
+MIN_CELLS = 10  # below this, a few cells moving together by chance can look like a shift
+
+
 def drift_flags(pf):
-    """A frame step is a stage shift when (almost) every cell moved the same big amount the same way."""
-    return (pf.coherence > 0.9) & (pf.drift > 40) & (pf["count"] >= 10)
+    """A frame step is a stage shift when (almost) every cell moved the same big amount the same way.
+
+    Rule 1: coherence > 0.9, shared shift > 40 px, and at least MIN_CELLS cells.
+    Rule 2 (Milestone 3): stage shifts hit a whole plate at once, so at a frame where most fields of the same
+    cell line pass rule 1, a sparser field is also flagged if it passes the coherence and shift tests. Only the
+    cell minimum is relaxed: fields that did not move (low coherence or shift) are never flagged by rule 2.
+    """
+    moved = (pf.coherence > 0.9) & (pf.drift > 40)
+    rule1 = moved & (pf["count"] >= MIN_CELLS)
+    fields = pf.groupby("cell_line").seq.transform("nunique")
+    hits = rule1.groupby([pf.cell_line, pf.frame_t]).transform("sum")
+    line_wide = hits >= np.maximum(2, np.ceil(fields / 2))
+    rule2 = moved & (pf["count"] < MIN_CELLS) & line_wide
+    return rule1 | rule2
 
 
 def correct(df, pf):

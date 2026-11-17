@@ -1,5 +1,5 @@
 // View D — lineage dendrogram (time runs down) + detail panel for the selected Track_ID.
-import { INK, DARK_RED, END_COL, RED, TEXT_COL, lineOf, hours, box, showTip, hideTip, fmt1, MAX_HOURS, describe } from "../common.js?v=20261117c";
+import { INK, DARK_RED, END_COL, RED, TEXT_COL, lineOf, hours, box, showTip, hideTip, fmt1, MAX_HOURS, describe } from "../common.js?v=20261117e";
 
 /** x = leaf order, y = frames. Mirrors lineage_layout() in build/common.py. */
 function layout(segs, byId) {

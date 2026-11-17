@@ -1,11 +1,11 @@
 // CellTrack Explorer — app state, data loading and coordination between views.
-import { COL, TEXT_COL, short, lineOf, fmt1, hours } from "./common.js?v=20261117c";
-import { growthView } from "./views/growth.js?v=20261117c";
-import { shiftView } from "./views/shift.js?v=20261117c";
-import { speedView } from "./views/speed.js?v=20261117c";
-import { endingsView } from "./views/endings.js?v=20261117c";
-import { mapView } from "./views/map.js?v=20261117c";
-import { treeView } from "./views/tree.js?v=20261117c";
+import { COL, TEXT_COL, short, lineOf, fmt1, hours } from "./common.js?v=20261117e";
+import { growthView } from "./views/growth.js?v=20261117e";
+import { shiftView } from "./views/shift.js?v=20261117e";
+import { speedView } from "./views/speed.js?v=20261117e";
+import { endingsView } from "./views/endings.js?v=20261117e";
+import { mapView } from "./views/map.js?v=20261117e";
+import { treeView } from "./views/tree.js?v=20261117e";
 
 const DEFAULT = { seq: "MCF10A F102", track: 1592 };
 
@@ -48,7 +48,7 @@ const app = {
     if (!seq) return;
     if (!this.seqCache.has(seq)) {
       const slug = this.data.seqInfo.get(seq).slug;
-      this.seqCache.set(seq, d3.json(`data/seq/${slug}.json`).then(d => {
+      this.seqCache.set(seq, d3.json(`data/seq/${slug}.json?v=20261117e`).then(d => {
         d.byId = new Map(d.segments.map(s => [s.id, s]));
         this.seqLoaded.set(seq, d);
       }));
@@ -148,7 +148,7 @@ d3.select("#reset").on("click", () => {
 
 // ---- boot
 async function main() {
-  const data = await d3.json("data/overview.json");
+  const data = await d3.json("data/overview.json?v=20261117e");
   const S = data.segments;
   data.segs = S.id.map((id, i) => ({
     id, seq: data.order[S.seq[i]], track: S.track[i], f0: S.f0[i], f1: S.f1[i], n: S.n[i],

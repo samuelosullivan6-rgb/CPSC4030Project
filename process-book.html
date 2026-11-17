@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Process Book · CellTrack Explorer</title>
-  <link rel="stylesheet" href="css/style.css?v=20261117c">
+  <link rel="stylesheet" href="css/style.css?v=20261117e">
 </head>
 <body>
   <header class="top page-top">
@@ -64,7 +64,8 @@
       <li><b>Cell IDs are not unique across files</b> (45,964 repeat), so every join is keyed by (sequence, Cell_ID).
         Missing this first produced 22,882 segments with straightness above 1.</li>
       <li><b>Stage-shift correction.</b> A frame step is flagged when coherence &gt; 0.9, the shared shift is &gt; 40 px,
-        and at least 10 cells are present. That gave 82 flagged steps in 20 of 25 sequences. The shared shift is
+        and at least 10 cells are present. That gave 82 flagged steps in 20 of 25 sequences (87 in 22 after the
+        Milestone 3 rule for sparse fields, Section 6). The shared shift is
         subtracted from every later position. Raw positions are kept, so the map can switch between raw and corrected.</li>
       <li><b>Endings.</b> The data has no apoptosis column, so each segment gets one of four endings:
         divided, until video end, left image (last position within 25 px of the border), or lost mid-image.</li>
@@ -232,14 +233,35 @@
     </div>
     <p class="todo"><b>To add:</b> the feedback from the Milestone 3 checkpoint, and what we changed because of it.</p>
 
+    <h3>Two decisions from the open questions</h3>
+    <p><b>1. Catching stage shifts in sparse fields.</b> Milestone 2 left an open question: the 10-cell minimum that
+      stops false alarms also missed real shifts in fields with few cells. View B made the misses easy to see, because
+      a field stayed unmarked in a frame where the rest of its line shifted. Our first idea was to flag a field whenever
+      most of its line was flagged. Before building it, we listed every field that rule would add:</p>
+    <table>
+      <tr><th>Field</th><th>Frame</th><th>Cells</th><th>Shared shift</th><th>Coherence</th><th>Real shift?</th></tr>
+      <tr><td>MDA-MB-231 F3</td><td>49–50</td><td>6–7</td><td>63–84 px</td><td>0.99–1.0</td><td>yes</td></tr>
+      <tr><td>MDA-MB-231 F5</td><td>49–50</td><td>8–9</td><td>126–138 px</td><td>1.0</td><td>yes</td></tr>
+      <tr><td>U87 F3</td><td>264</td><td>5</td><td>94 px</td><td>0.99</td><td>yes</td></tr>
+      <tr><td>HEK293T F2, F5, F8</td><td>8–11</td><td>21–34</td><td>≤ 1.6 px</td><td>≤ 0.43</td><td>no: these fields did not move</td></tr>
+      <tr><td>U87 F1</td><td>0–3, 278–287</td><td>17–42</td><td>≤ 14 px</td><td>≤ 0.61</td><td>no</td></tr>
+    </table>
+    <p>The obvious rule would have "corrected" fields that never moved. Instead we relaxed <i>only</i> the cell
+      minimum: at a frame where most fields of a line are flagged, a field with fewer than 10 cells is flagged if it
+      still passes the coherence and shift tests. This added exactly the 5 real shifts above (82 → 87 flagged steps,
+      in 22 sequences instead of 20) and nothing else. It removed a fake jump from 17 cells, the largest from 37.9 to
+      27.7 px per 15 min (MDA-MB-231 F3). No cell's ending changed, and each line's median speed stayed the same.</p>
+
+    <p><b>2. No frame slider in C.</b> Milestone 1 planned a slider and play button to animate the paths in C. We
+      replaced them with the time brush in B. It shows whole path segments instead of animating them, which avoids
+      the change blindness we cited when we dropped the animation-only map in Milestone 1. It also ties the time
+      window directly to the stage-shift view, where most questions about time start (for example, comparing raw and
+      corrected paths around the 86 h shift).</p>
+
     <h3>Still open</h3>
     <ul>
-      <li>Flag a stage shift when most fields of the same line are flagged at that frame. View B already marks these
-        frames, but the drift correction still uses per-field flags, so the frame-49 shift in MDA-MB-231 F3/F5 (fewer
-        than 10 cells) is not corrected. <i>Team decision: implement, or explain why not.</i></li>
-      <li>A frame slider / play button for C (planned in Milestone 1). The time brush in B does this job now.
-        <i>Team decision: keep the brush only, or add the slider.</i></li>
-      <li>The speed (E) and time (B) brushes can only be set with a mouse.</li>
+      <li>The speed (E) and time (B) brushes can only be set with a mouse. Everything else has a keyboard route, and
+        both brushes can also be set from the page URL.</li>
     </ul>
 
     <h2>7. Evaluation</h2>
