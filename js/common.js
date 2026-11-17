@@ -26,6 +26,9 @@ export function matrixRows(seqs, height) {
   return d3.scaleBand().domain(seqs).range([MATRIX.top, height - MATRIX.bottom]).paddingInner(MATRIX.rowPad).paddingOuter(0.1);
 }
 
+/** Font size for per-row text: never bigger than the row allows. */
+export function rowFont(y, max = 10.5) { return Math.max(7, Math.min(max, y.step() * 0.92)); }
+
 /** Line-group separators: indices i where row i starts a new cell line. */
 export function groupBreaks(seqs) {
   return seqs.filter((s, i) => i && lineOf(seqs[i - 1]) !== lineOf(s));

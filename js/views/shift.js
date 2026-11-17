@@ -1,5 +1,5 @@
 // View B — stage-shift timeline: sequences x time heatmap of the shared movement of all cells.
-import { COL, TEXT_COL, RED, DARK_RED, short, lineOf, hours, box, showTip, hideTip, matrixRows, groupBreaks, fmt1, MAX_HOURS, describe } from "../common.js";
+import { COL, TEXT_COL, RED, DARK_RED, short, lineOf, hours, box, showTip, hideTip, matrixRows, groupBreaks, fmt1, MAX_HOURS, describe, rowFont } from "../common.js?v=20261117c";
 
 const VMAX = 120; // px; larger shifts share the darkest color
 const color = d3.scaleLinear([0, 30, 60, 90, VMAX], ["#ffffff", "#f3d3cf", "#e0806f", "#c8322b", "#7a1410"]).clamp(true);
@@ -68,10 +68,14 @@ export function shiftView(el, app) {
       .attr("y", ([, ss]) => (y(ss[0]) + y(ss[ss.length - 1]) + y.bandwidth()) / 2).attr("dy", "0.32em")
       .style("fill", ([l]) => TEXT_COL[l]).text(([l]) => l);
 
-    svg.append("g").selectAll("text").data(seqs).join("text").attr("class", "row-label")
+    svg.append("g").selectAll("text").data(seqs).join("text").attr("class", "row-label").style("font-size", `${rowFont(y)}px`)
       .attr("x", LEFT - 5).attr("y", s => y(s) + y.bandwidth() / 2).attr("dy", "0.32em").attr("text-anchor", "end")
       .text(short)
-      .on("click", (e, s) => app.set({ seq: s, track: null, ending: null, hoverSeg: null }));
+      .attr("tabindex", 0).attr("role", "button").attr("aria-label", s => `select ${s}`)
+      .on("click", (e, s) => app.set({ seq: s, track: null, ending: null, hoverSeg: null }))
+      .on("keydown", (e, s) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); app.set({ seq: s, track: null, ending: null, hoverSeg: null }); }
+      });
 
     legend(w);
     lineWideShifts(seqs);
@@ -111,7 +115,7 @@ export function shiftView(el, app) {
       const ev = g.selectAll(null).data(events).join("g")
         .attr("transform", e => `translate(${x(hours(e.f0))},${y.range()[0] - 8})`);
       ev.append("path").attr("d", "M-4,-5 L4,-5 L0,1 Z").attr("fill", TEXT_COL[line]);
-      ev.append("text").attr("class", "ev-label").attr("x", 5).attr("y", -1).attr("font-size", 10).style("fill", TEXT_COL[line])
+      ev.append("text").attr("class", "ev-label").attr("x", 5).attr("y", -1).attr("font-size", 10.5).style("fill", TEXT_COL[line])
         .text(e => `${e.k}/${ss.length}`);
       ev.append("title").text(e => `${line}: ${e.k} of ${ss.length} fields shift at frame ${e.f0}` +
         (e.f1 > e.f0 ? `–${e.f1}` : "") + ` (${fmt1(hours(e.f0))} h)`);
@@ -132,16 +136,16 @@ export function shiftView(el, app) {
     const grad = svg.append("defs").append("linearGradient").attr("id", "shiftGrad");
     d3.range(0, 1.01, 0.25).forEach(t => grad.append("stop").attr("offset", t).attr("stop-color", color(t * VMAX)));
     g.append("rect").attr("width", lw).attr("height", 8).attr("fill", "url(#shiftGrad)").attr("stroke", "#bbb").attr("stroke-width", 0.5);
-    g.selectAll("text.t").data([0, 60, VMAX]).join("text").attr("class", "note").attr("font-size", 10)
+    g.selectAll("text.t").data([0, 60, VMAX]).join("text").attr("class", "note").attr("font-size", 10.5)
       .attr("x", v => (v / VMAX) * lw).attr("y", 18).attr("text-anchor", (v, i) => ["start", "middle", "end"][i])
       .text(v => v === VMAX ? "≥120 px" : v);
     const pat = svg.select("defs").append("pattern").attr("id", "hatch").attr("width", 6).attr("height", 6).attr("patternUnits", "userSpaceOnUse");
     pat.append("rect").attr("width", 6).attr("height", 6).attr("fill", "#ece9e3");
     pat.append("path").attr("d", "M0,6 L6,0").attr("stroke", "#a9a59c").attr("stroke-width", 0.8);
     g.append("rect").attr("x", lw + 12).attr("width", 14).attr("height", 8).attr("fill", "url(#hatch)");
-    g.append("text").attr("class", "note").attr("font-size", 10).attr("x", lw + 30).attr("y", 8).text("no cells");
+    g.append("text").attr("class", "note").attr("font-size", 10.5).attr("x", lw + 30).attr("y", 8).text("no cells");
     g.append("path").attr("transform", `translate(${lw + 92},4)`).attr("d", "M-4,-4 L4,-4 L0,2 Z").attr("fill", "#5f5c55");
-    g.append("text").attr("class", "note").attr("font-size", 10).attr("x", lw + 99).attr("y", 8)
+    g.append("text").attr("class", "note").attr("font-size", 10.5).attr("x", lw + 99).attr("y", 8)
       .text("n/N fields of a line shift together (stage moved)");
   }
 

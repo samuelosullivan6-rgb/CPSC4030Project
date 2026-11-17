@@ -1,6 +1,6 @@
 """Export the Milestone 2 derived tables to compact JSON for the D3 site.
 
-Run from the website folder after `Milestone 2/build/derive.py` has produced build/derived/:
+Run from the website folder after scripts/pipeline/derive.py has produced scripts/pipeline/derived/:
 
     python scripts/export_data.py
 
@@ -15,7 +15,10 @@ import numpy as np
 import pandas as pd
 
 HERE = Path(__file__).resolve().parent.parent
-DERIVED = HERE.parent / "Milestone 2" / "build" / "derived"
+# Output of scripts/pipeline/derive.py (falls back to the Milestone 2 build folder it came from)
+DERIVED = HERE / "scripts" / "pipeline" / "derived"
+if not DERIVED.is_dir():
+    DERIVED = HERE.parent / "Milestone 2" / "build" / "derived"
 OUT = HERE / "data"
 (OUT / "seq").mkdir(parents=True, exist_ok=True)
 

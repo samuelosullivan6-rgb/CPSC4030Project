@@ -1,5 +1,5 @@
 // View F — how cell segments end: 100% stacked bar per sequence.
-import { END_COL, RED, TEXT_COL, lineOf, box, showTip, hideTip, matrixRows, fmtPct, describe } from "../common.js";
+import { END_COL, RED, TEXT_COL, lineOf, box, showTip, hideTip, matrixRows, fmtPct, describe, rowFont } from "../common.js?v=20261117c";
 
 export function endingsView(el, app) {
   const svg = d3.select(el).append("svg");
@@ -27,9 +27,9 @@ export function endingsView(el, app) {
     lg.selectAll("g").data(items).join("g")
       .attr("transform", d => `translate(${(d.i % 2) * colW},${Math.floor(d.i / 2) * 11})`)
       .call(g => g.append("rect").attr("width", 9).attr("height", 8).attr("fill", d => END_COL[d.i]))
-      .call(g => g.append("text").attr("class", "note").attr("font-size", 10).attr("x", 12).attr("y", 7.5)
+      .call(g => g.append("text").attr("class", "note").attr("font-size", 10.5).attr("x", 12).attr("y", 7.5)
         .text(d => d.i === 3 ? `${d.e} ?` : d.e));
-    lg.append("text").attr("class", "note").attr("font-size", 10).attr("y", 30)
+    lg.append("text").attr("class", "note").attr("font-size", 10.5).attr("y", 30)
       .text("? = possible apoptosis or annotation gap");
 
     svg.append("g").attr("class", "axis").attr("transform", `translate(0,${h - 34})`)
@@ -67,8 +67,8 @@ export function endingsView(el, app) {
       "or lost mid-image (possible apoptosis or annotation gap). Share lost mid-image by cell line: " +
       lineShare.map(([l, v]) => `${l} ${fmtPct(v)}`).join(", ") + ".");
     gBars.append("text").attr("class", "n").attr("x", w - 34).attr("y", y.bandwidth() / 2).attr("dy", "0.32em")
-      .attr("font-size", 9.5).text(r => r.n);
-    svg.append("text").attr("x", w - 34).attr("y", y.range()[0] - 3).attr("font-size", 9.5).attr("font-weight", 700)
+      .attr("font-size", rowFont(y)).text(r => r.n);
+    svg.append("text").attr("x", w - 34).attr("y", y.range()[0] - 3).attr("font-size", 10.5).attr("font-weight", 700)
       .attr("class", "note").text("n");
     style();
   }

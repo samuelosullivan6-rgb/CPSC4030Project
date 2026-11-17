@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CellTrack Explorer</title>
   <meta name="description" content="Interactive dashboard for exploring cell behavior in ground-truth cell-tracking videos (CPSC 4030, Fall 2026).">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=20261117c">
 </head>
 <body class="loading">
   <header class="top">
@@ -20,6 +20,7 @@
     <div class="controls">
       <span class="label">Cell lines</span>
       <div id="chips" role="group" aria-label="Show or hide cell lines"></div>
+      <label class="sel">Sequence <select id="seqSelect"></select></label>
       <button id="reset" type="button">Reset</button>
     </div>
     <div id="status" aria-live="polite">loading data…</div>
@@ -40,23 +41,25 @@
     </section>
 
     <section id="vD" class="view">
-      <h2><span class="badge">D</span> Lineage <small id="treeTitle"></small></h2>
+      <h2><span class="badge">D</span> Lineage
+        <label class="toggle"><span class="sr-only">Lineage</span><select id="trackSelect"></select></label></h2>
       <div class="body"></div>
       <div class="details" id="treeDetails"></div>
     </section>
 
     <section id="vB" class="view matrix">
-      <h2><span class="badge">B</span> Stage shifts <small>shared movement of all cells per frame · drag to pick a time window for C</small></h2>
+      <h2><span class="badge">B</span> Stage shifts <small>shared movement of all cells per frame · drag across to set C's time window</small></h2>
       <div class="body"></div>
     </section>
 
     <section id="vE" class="view matrix">
-      <h2><span class="badge">E</span> Speed by sequence <small>drag to brush a speed range</small></h2>
+      <h2><span class="badge">E</span> Speed <small>drag to brush</small></h2>
       <div class="body"></div>
     </section>
 
     <section id="vF" class="view matrix">
-      <h2><span class="badge">F</span> How cells end <small>click a bar segment to filter C</small></h2>
+      <h2><span class="badge">F</span> How cells end
+        <label class="toggle"><span class="sr-only">Show in C</span><select id="endSelect"></select></label></h2>
       <div class="body"></div>
     </section>
   </main>
@@ -64,6 +67,6 @@
   <div id="tip" role="tooltip"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/main.js?v=20261117c"></script>
 </body>
 </html>

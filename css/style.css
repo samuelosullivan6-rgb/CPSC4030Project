@@ -26,14 +26,21 @@ nav { display: flex; gap: 12px; font-size: 12.5px; }
 nav a { text-decoration: none; color: var(--muted); padding-bottom: 1px; }
 nav a[aria-current="page"] { color: var(--ink); border-bottom: 2px solid var(--red); }
 nav a:hover { color: var(--ink); }
-.controls { display: flex; align-items: center; gap: 8px; }
+.controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.chip { white-space: nowrap; }
 .controls .label { color: var(--muted); font-size: 12px; }
-#chips { display: flex; gap: 6px; }
+#chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .chip {
   border: 1.5px solid var(--c); background: var(--c); color: #fff; border-radius: 12px;
   padding: 2px 10px; cursor: pointer; font-size: 12px; font-weight: 600;
 }
 .chip.off { background: #fff; color: var(--muted); border-style: dashed; }
+label.sel { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+select { font: inherit; font-size: 12px; border: 1px solid #aaa; border-radius: 4px; background: #fff; padding: 1px 4px; color: var(--ink); max-width: 190px; }
+.view h2 select { font-size: 11.5px; max-width: 150px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+:focus-visible { outline: 2px solid #2e5f8e; outline-offset: 2px; }
+svg :focus-visible { outline: none; text-decoration: underline; font-weight: 700; }
 #reset { border: 1px solid #aaa; background: #fff; border-radius: 4px; padding: 2px 10px; cursor: pointer; }
 #reset:hover { border-color: var(--ink); }
 #status { margin-left: auto; color: var(--muted); font-size: 12.5px; }
@@ -139,3 +146,8 @@ body.loading #dash { opacity: 0.4; }
 .page .video iframe { width: 100%; height: 100%; border: 0; }
 .page-top { position: sticky; top: 0; z-index: 2; }
 @media (max-width: 700px) { .page .pair { grid-template-columns: 1fr; } }
+
+/* short laptop screens: give the 25-row matrix a bit more height */
+@media (min-width: 1101px) and (max-height: 780px) {
+  #dash { grid-template-rows: 47fr 53fr; }
+}

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Process Book · CellTrack Explorer</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=20261117c">
 </head>
 <body>
   <header class="top page-top">
@@ -165,39 +165,81 @@
 
     <h2>6. Milestone 3: the D3 implementation</h2>
     <p>The dashboard on the <a href="index.html">first page</a> implements all six views from Milestone 2 in D3.js v7,
-      with the linked interactions planned in Milestone 2:</p>
+      with the linked interactions planned in Milestone 2.</p>
+    <figure>
+      <img src="img/process/d3_overview.png" alt="The D3 dashboard: growth panels, track map, lineage tree, stage-shift heatmap, speed box plots and endings bars">
+      <figcaption>The D3 dashboard at its default state: sequence MCF10A F102 and lineage 1592 are selected (the same state as the Milestone 2 figure).</figcaption>
+    </figure>
     <table>
       <tr><th>Action</th><th>Effect</th></tr>
       <tr><td>Cell-line chips (header)</td><td>hide a line's panel in A and its rows in B, E and F</td></tr>
-      <tr><td>Click a line in A, or a row label in B</td><td>select that sequence everywhere and load its paths in C</td></tr>
+      <tr><td>Click a line in A, a row label in B, or the Sequence menu</td><td>select that sequence everywhere and load its paths in C</td></tr>
       <tr><td>Hover A or B</td><td>tooltip, plus the same frame marked in both views</td></tr>
       <tr><td>Brush the time axis in B</td><td>C only draws path pieces inside that window</td></tr>
       <tr><td>Brush the speed axis in E</td><td>segments in that range are colored in C; outlier dots in range grow</td></tr>
-      <tr><td>Click an outlier in E, or a path in C</td><td>open that lineage in D</td></tr>
+      <tr><td>Click an outlier in E, a path in C, or the Lineage menu</td><td>open that lineage in D</td></tr>
       <tr><td>Hover a path in C or a branch in D</td><td>highlight it in both views and mark its time span on B's selected row</td></tr>
-      <tr><td>Click a bar segment in F</td><td>show only segments with that ending in C, with their end marks</td></tr>
+      <tr><td>Click a bar segment in F, or the endings menu</td><td>show only segments with that ending in C, with their end marks</td></tr>
       <tr><td>Raw positions toggle (C)</td><td>switch between raw and drift-corrected coordinates</td></tr>
       <tr><td>Reset</td><td>clear every selection and brush</td></tr>
     </table>
+    <p>Every state is kept in the page URL, so a view can be shared or bookmarked. For example,
+      <a href="index.html?brush=25,70">index.html?brush=25,70</a> opens the dashboard with fast cells brushed.</p>
+
+    <div class="pair">
+      <figure><img src="img/process/d3_brush.png" alt="Speed range 25 to 70 brushed in E, fast paths colored in C">
+        <figcaption>Brushing 25–70 px / 15 min in E colors those cells in C. Most fast MCF10A F102 cells sit in one group on the right edge.</figcaption></figure>
+      <figure><img src="img/process/d3_ending.png" alt="Only lost-mid-image segments of U87 F2 drawn in C">
+        <figcaption>Clicking "lost mid-image" for U87 F2 in F shows only those cells in C, with an ✕ where each track stops.</figcaption></figure>
+    </div>
+    <div class="pair">
+      <figure><img src="img/process/d3_raw_window.png" alt="Raw positions during 80 to 92 hours show long horizontal streaks">
+        <figcaption>Raw positions, with the time window 80–92 h brushed in B: the stage jump at frame 345 drags every path sideways.</figcaption></figure>
+      <figure><img src="img/process/d3_corrected_window.png" alt="Drift-corrected positions during 80 to 92 hours without streaks">
+        <figcaption>The same window after drift correction: the streaks are gone. The raw toggle lets a viewer check the correction.</figcaption></figure>
+    </div>
+
     <h3>Implementation decisions</h3>
     <ul>
-      <li><b>Static site, precomputed data.</b> GitHub Pages only serves static files, so <code>scripts/export_data.py</code> turns the
-        Milestone 2 tables into JSON: one 0.5 MB overview file, plus one path file per sequence (27–590 KB) that is only
-        loaded when that sequence is selected.</li>
+      <li><b>Static site, precomputed data.</b> GitHub Pages only serves static files, so the pipeline in
+        <code>scripts/pipeline/</code> derives the tables and <code>scripts/export_data.py</code> turns them into JSON: one
+        0.5 MB overview file, plus one path file per sequence (27–590 KB) that is only loaded when that sequence is selected.</li>
       <li><b>Canvas for the heatmap.</b> View B has about 9,600 cells, so it is drawn on a canvas, with axes, labels and
         brush in SVG on top.</li>
       <li><b>Shared row layout.</b> B, E and F use one row scale, so a sequence can be read straight across all three.</li>
       <li><b>Wide invisible hit areas</b> on thin lines in A, C and D, so single paths can be hovered and clicked.</li>
     </ul>
-    <p class="todo"><b>To add:</b> screenshots of the D3 version (one per interaction above is ideal), anything that
-      changed while implementing, and the feedback from the Milestone 3 checkpoint.</p>
+
+    <h3>Design review and the changes it caused</h3>
+    <p>After the first D3 version worked, we reviewed it against a prioritized checklist: P0 for correctness and
+      accessibility, P1 for perception and labeling, P2 for polish. Colors were checked with a contrast calculator
+      and a color-blindness simulation, not by eye.</p>
+    <table>
+      <tr><th>Problem found</th><th>Level</th><th>Change</th></tr>
+      <tr><td>No text alternative for any chart</td><td>P0</td><td>Each chart has a screen-reader description that states its main finding, built from the live data</td></tr>
+      <tr><td>White text on the HEK293T and U87 chips was 3.95:1 and 4.05:1 (needs 4.5:1)</td><td>P0</td><td>Chips use the darker text versions of the line colors (4.82:1 and 5.31:1)</td></tr>
+      <tr><td>Neighboring segments in F were 1.04–2.13:1 apart, separated only by a 0.8 px gap, with color as the only key</td><td>P0</td><td>Wider gaps, and the percentage printed inside each segment wide enough for it</td></tr>
+      <tr><td>Track map axes had no units; "segment" was never defined on the page</td><td>P1</td><td>Axis labels in px; a one-line definition at the top of E</td></tr>
+      <tr><td>"Lost mid-image" read as a fact, though it is a guess</td><td>P1</td><td>Marked "?" with the caveat "possible apoptosis or annotation gap" in F, C and the tooltips</td></tr>
+      <tr><td>Our main findings were only in the report, not on the charts</td><td>P1</td><td>B marks frames where most fields of a line shift together (e.g. 9/9 MCF10A); A labels cultures that barely grow (e.g. "F4 ×1.0 slow")</td></tr>
+      <tr><td>Everything needed a mouse</td><td>A11y</td><td>Sequence, lineage and ending menus; keyboard-selectable row labels; visible focus outlines</td></tr>
+      <tr><td>On a 1280 × 720 laptop, B's 25 row labels overlapped; on phones the header scrolled sideways</td><td>P2</td><td>Row text scales with row height, the matrix gets more height on short screens, and the header wraps</td></tr>
+    </table>
+    <div class="pair">
+      <figure><img src="img/process/rev_speed_end.png" alt="Milestone 2 speed and endings views"><figcaption>Milestone 2: endings told apart by color only.</figcaption></figure>
+      <figure><img src="img/process/d3_hidden.png" alt="D3 dashboard with HEK293T hidden"><figcaption>D3 version after the review, with HEK293T hidden from the header.
+        F prints percentages when rows are tall enough, B has the shift markers, and A shows "slow" labels.</figcaption></figure>
+    </div>
+    <p class="todo"><b>To add:</b> the feedback from the Milestone 3 checkpoint, and what we changed because of it.</p>
 
     <h3>Still open</h3>
     <ul>
-      <li>Flag a stage shift when most fields of the same line are flagged at that frame. This would catch the frame-49
-        shift in MDA-MB-231 F3/F5, which have fewer than 10 cells.</li>
-      <li>A frame slider / play button for C (planned in Milestone 1); for now, the time brush in B does this job.</li>
-      <li>Keyboard access and screen-reader text for the views.</li>
+      <li>Flag a stage shift when most fields of the same line are flagged at that frame. View B already marks these
+        frames, but the drift correction still uses per-field flags, so the frame-49 shift in MDA-MB-231 F3/F5 (fewer
+        than 10 cells) is not corrected. <i>Team decision: implement, or explain why not.</i></li>
+      <li>A frame slider / play button for C (planned in Milestone 1). The time brush in B does this job now.
+        <i>Team decision: keep the brush only, or add the slider.</i></li>
+      <li>The speed (E) and time (B) brushes can only be set with a mouse.</li>
     </ul>
 
     <h2>7. Evaluation</h2>

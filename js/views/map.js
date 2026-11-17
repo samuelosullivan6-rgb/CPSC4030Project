@@ -1,5 +1,5 @@
 // View C — track map: cell paths of the selected sequence in image coordinates.
-import { COL, TEXT_COL, RED, DARK_RED, INK, GRAY, END_COL, IMG_W, IMG_H, lineOf, hours, box, showTip, hideTip, fmt1, describe } from "../common.js";
+import { COL, TEXT_COL, RED, DARK_RED, INK, GRAY, END_COL, IMG_W, IMG_H, lineOf, hours, box, showTip, hideTip, fmt1, describe } from "../common.js?v=20261117c";
 
 const END_SYMBOL = { 2: d3.symbolTriangle, 3: d3.symbolX };   // left image, lost mid-image
 
@@ -24,6 +24,7 @@ export function mapView(section, app) {
 
   function draw() {
     d3.select("#rawToggle").property("checked", app.state.raw);
+    if (app.state.seq) legend(COL[lineOf(app.state.seq)]);   // fill the key first: it changes the map's height
     const { w, h } = box(el);
     svg.attr("width", w).attr("height", h).selectAll("*").remove();
     const data = app.seqData();
@@ -69,7 +70,7 @@ export function mapView(section, app) {
       .selectAll("path").data(data).join("path").attr("d", d => line(d.pts));
 
     const ctx = paths.filter(d => !isLineage(d) && !isBrushed(d) && !isEnding(d));
-    layer(ctx, GRAY, 0.6, ending != null ? 0.35 : 0.65);
+    layer(ctx, GRAY, 0.6, ending != null ? 0.5 : 0.65);
     layer(paths.filter(isLineage), RED, 1, 1);
     layer(paths.filter(d => isBrushed(d) && !isEnding(d)), lc, 1.6);
     if (ending != null) layer(paths.filter(isEnding), END_COL[ending], 1.6);
@@ -114,7 +115,6 @@ export function mapView(section, app) {
       (brush ? ` · ${nb} brushed` : "") +
       (app.state.window ? ` · ${fmt1(hours(app.state.window[0]))}–${fmt1(hours(app.state.window[1]))} h` : "") +
       (app.state.raw ? " · <b>raw</b>" : " · drift-corrected"));
-    legend(lc);
     const lost = paths.filter(d => d.s.ending === 3).length;
     describe(svg, `Map of ${paths.length} cell paths in sequence ${seq}, in image pixel coordinates` +
       (app.state.raw ? " (raw positions)" : " (corrected for microscope stage shifts)") +

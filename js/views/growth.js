@@ -1,5 +1,5 @@
 // View A — growth: cell count over time, one panel per cell line, log2 y-axis.
-import { COL, TEXT_COL, RED, short, lineOf, hours, box, showTip, hideTip, rollingMedian, MAX_HOURS, describe } from "../common.js";
+import { COL, TEXT_COL, RED, short, lineOf, hours, box, showTip, hideTip, rollingMedian, MAX_HOURS, describe } from "../common.js?v=20261117c";
 
 export function growthView(el, app) {
   const svg = d3.select(el).append("svg");
@@ -20,7 +20,7 @@ export function growthView(el, app) {
     const { w, h } = box(el);
     svg.attr("width", w).attr("height", h).selectAll("*").remove();
     const lines = app.data.lines.filter(l => !app.state.hidden.has(l));
-    const cols = lines.length > 1 ? 2 : 1, rows = Math.ceil(lines.length / cols);
+    const cols = lines.length === 3 ? 3 : Math.min(lines.length, 2), rows = Math.ceil(lines.length / cols);
     const pw = w / cols, ph = h / rows;
     const m = { l: 34, r: 66, t: 16, b: 26 };   // wide right margin for end labels like "F3 ×1.0 slow"
 
@@ -70,6 +70,10 @@ export function growthView(el, app) {
       }).sort((a, b) => a.v - b.v);
       const gap = Math.log2(300 / 0.8) * 11 / (ph - m.t - m.b);
       for (let i = 1; i < ends.length; i++) ends[i].v = Math.max(ends[i].v, ends[i - 1].v + gap);
+      // keep the top label inside the panel, then push the others back down to keep the spacing
+      const top = Math.log2(y.invert(m.t + 4));
+      if (ends.length) ends[ends.length - 1].v = Math.min(ends[ends.length - 1].v, top);
+      for (let i = ends.length - 2; i >= 0; i--) ends[i].v = Math.min(ends[i].v, ends[i + 1].v - gap);
       g.append("g").selectAll("text").data(ends).join("text").attr("class", "end-label")
         .attr("x", d => x(d.h) + 3).attr("y", d => y(2 ** d.v)).attr("dy", "0.32em")
         .attr("font-size", 10.5).style("cursor", "pointer").text(d => d.slow ? `${short(d.s)} ${d.slow} slow` : short(d.s))
