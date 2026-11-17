@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About · CellTrack Explorer</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="top page-top">
+    <div class="brand">
+      <h1>CellTrack Explorer</h1>
+      <nav>
+        <a href="index.html">Dashboard</a>
+        <a href="process-book.html">Process book</a>
+        <a href="about.html" aria-current="page">About &amp; screencast</a>
+      </nav>
+    </div>
+  </header>
+
+  <article class="page">
+    <h1>About the project</h1>
+    <p class="meta">Levi Dyer, Mir Patel, Samuel Sullivan · CPSC 4030-001 Data Visualization · Fall 2026</p>
+
+    <p>CellTrack Explorer is an interactive dashboard for exploring how cells behave in time-lapse microscopy videos.
+      It covers 25 ground-truth sequences of four cell lines (MCF10A, HEK293T, MDA-MB-231, U87), with 229,890 annotated
+      cell positions in all. With it, you can compare how fast cultures grow and how fast cells move, find microscope stage
+      shifts, and follow a single cell's family tree and path.</p>
+
+    <h2>Screencast</h2>
+    <div class="video">
+      <!-- Replace this placeholder with the YouTube/Vimeo embed for the final delivery, e.g.
+           <iframe src="https://www.youtube.com/embed/VIDEO_ID" title="CellTrack Explorer screencast" allowfullscreen></iframe> -->
+      <span>Screencast coming with the final delivery (Dec 10, 2026)</span>
+    </div>
+
+    <h2>How to use the dashboard</h2>
+    <ol>
+      <li><b>Overview:</b> scan growth (A) and the stage-shift timeline (B). Vertical stripes in B are microscope events.</li>
+      <li><b>Zoom and filter:</b> click a sequence, brush a time window in B or a speed range in E, or click an ending in F.</li>
+      <li><b>Details:</b> click a path in C to open its lineage in D, then hover branches to see their paths.</li>
+    </ol>
+
+    <h2>Links</h2>
+    <ul>
+      <li>Code: <a href="https://github.com/samuelosullivan6-rgb/CPSC4030Project">github.com/samuelosullivan6-rgb/CPSC4030Project</a></li>
+      <li><a href="process-book.html">Process book</a></li>
+    </ul>
+
+    <h2>Credits</h2>
+    <p>Data: the cell-tracking ground-truth dataset provided for CPSC 4030. Built with <a href="https://d3js.org">D3.js</a> v7.</p>
+  </article>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Process Book · CellTrack Explorer</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="top page-top">
+    <div class="brand">
+      <h1>CellTrack Explorer</h1>
+      <nav>
+        <a href="index.html">Dashboard</a>
+        <a href="process-book.html" aria-current="page">Process book</a>
+        <a href="about.html">About &amp; screencast</a>
+      </nav>
+    </div>
+  </header>
+
+  <article class="page">
+    <h1>Process Book</h1>
+    <p class="meta">Levi Dyer, Mir Patel, Samuel Sullivan · CPSC 4030-001 Data Visualization · Fall 2026</p>
+
+    <p class="todo"><b>Draft for the Milestone 3 checkpoint.</b> Sections 1–5 summarize what we wrote and found in
+      Milestones 1 and 2. Yellow boxes like this one mark what the team still needs to add before the final delivery (Dec 10).</p>
+
+    <h2>1. Overview and motivation</h2>
+    <p>We picked <b>Use Case 1: Explore Cell Behavior</b>, using only the ground-truth tracks (Dataset 1). We chose it
+      because we wanted the project to be about what the cells are doing rather than about scoring tracking models,
+      and because its tasks (summaries, comparisons, outliers, and catching bad data) push toward different chart
+      types instead of the same chart repeated.</p>
+
+    <h3>Questions the dashboard should answer</h3>
+    <ul>
+      <li>How long do cells last, how far and how fast do they move, and how often do they divide? Does that change by cell line?</li>
+      <li>Do sequences (fields) of the same cell line behave alike, and how different are the cell lines from each other?</li>
+      <li>Which cells are unusual: very fast, very short-lived, or ending in the middle of the image?</li>
+      <li>Which sequences show experimental problems: empty early frames, cultures that barely grow, or moments where
+        the microscope stage moved and dragged every cell with it?</li>
+    </ul>
+
+    <h2>2. Data and processing</h2>
+    <p>We used all 25 ground-truth sequences with no sampling: 229,890 cell observations (one row per cell per frame,
+      one frame every 15 minutes).</p>
+    <table>
+      <tr><th>Cell line</th><th>Sequences</th><th>Frames per video</th><th>Rows</th><th>Cell segments</th><th>Lineages</th><th>Divisions</th></tr>
+      <tr><td>MCF10A</td><td>9</td><td>385 (96.25 h)</td><td>67,586</td><td>2,109</td><td>901</td><td>601</td></tr>
+      <tr><td>HEK293T</td><td>6</td><td>230 (57.5 h)</td><td>85,345</td><td>2,133</td><td>1,008</td><td>561</td></tr>
+      <tr><td>MDA-MB-231</td><td>6</td><td>385 (96.25 h)</td><td>51,987</td><td>933</td><td>729</td><td>102</td></tr>
+      <tr><td>U87</td><td>4</td><td>289 (72.25 h)</td><td>24,972</td><td>752</td><td>592</td><td>71</td></tr>
+    </table>
+    <p>Most questions are about whole cells or whole videos, so we aggregate in Python (pandas) and load the results
+      in D3 as JSON. We work at three levels:</p>
+    <ul>
+      <li><b>Per sequence × frame:</b> cell count, mean step vector, and a <i>coherence</i> score
+        (|mean step vector| ÷ mean step length). Near 1 means every cell moved the same way.</li>
+      <li><b>Per cell segment:</b> one cell from birth or entry to division or exit. We use segments instead of
+        Track_ID for movement because one Track_ID covers a whole family (up to 76 cells).</li>
+      <li><b>Per lineage (Track_ID):</b> span, divisions, and branches.</li>
+    </ul>
+    <h3>Cleaning decisions</h3>
+    <ul>
+      <li><b>Cell IDs are not unique across files</b> (45,964 repeat), so every join is keyed by (sequence, Cell_ID).
+        Missing this first produced 22,882 segments with straightness above 1.</li>
+      <li><b>Stage-shift correction.</b> A frame step is flagged when coherence &gt; 0.9, the shared shift is &gt; 40 px,
+        and at least 10 cells are present. That gave 82 flagged steps in 20 of 25 sequences. The shared shift is
+        subtracted from every later position. Raw positions are kept, so the map can switch between raw and corrected.</li>
+      <li><b>Endings.</b> The data has no apoptosis column, so each segment gets one of four endings:
+        divided, until video end, left image (last position within 25 px of the border), or lost mid-image.</li>
+      <li>The speed view leaves out segments shorter than 2 h (8 frames), and the growth view uses a 1-hour rolling median.</li>
+    </ul>
+
+    <h2>3. Milestone 1: sketches and alternatives</h2>
+    <figure>
+      <img src="img/process/m1_dashboard.svg" alt="Milestone 1 hand-style wireframe of the dashboard with five linked views A to E">
+      <figcaption>Milestone 1 wireframe: (A) small multiples of cell count, (B) box plot + dots per cell line,
+        (C) track map, (D) lineage tree, (E) direction rose. The data shown was made up.</figcaption>
+    </figure>
+    <p>Before settling on this layout, we sketched and dropped several alternatives:</p>
+    <table>
+      <tr><th style="width:34%">Sketch</th><th>Why we dropped or kept it</th></tr>
+      <tr><td><img src="img/process/m1_alt_scatter.svg" alt="three raw-column scatterplots"></td>
+        <td><b>Three raw-column scatterplots</b> <span class="tag">dropped</span><br>Tens of thousands of overlapping
+          points, and none of them answer track-level questions. This is what made us compute summaries first.</td></tr>
+      <tr><td><img src="img/process/m1_alt_heatmap.svg" alt="sequence by frame heatmap"></td>
+        <td><b>Sequence × frame heatmap</b> <span class="tag keep">backup</span><br>Compact, but growth rate is a slope
+          and is easier to read from position than from color. This idea came back in Milestone 2 as View B.</td></tr>
+      <tr><td><img src="img/process/m1_alt_parcoords.svg" alt="parallel coordinates"></td>
+        <td><b>Parallel coordinates</b> <span class="tag">dropped</span><br>A hairball with thousands of tracks,
+          and harder to read for a biologist who hasn't seen one before.</td></tr>
+      <tr><td><img src="img/process/m1_alt_pie.svg" alt="pie charts of endings"></td>
+        <td><b>Pie charts of endings</b> <span class="tag">dropped</span><br>Angle and area are weak channels. We noted
+          that a stacked bar would be better, which became View F.</td></tr>
+      <tr><td><img src="img/process/m1_alt_cube.svg" alt="3D space-time cube"></td>
+        <td><b>3D space-time cube</b> <span class="tag">dropped</span><br>Occlusion, needs rotation, and depth is a
+          poor channel.</td></tr>
+      <tr><td><img src="img/process/m1_alt_animation.svg" alt="animated dots map"></td>
+        <td><b>Animation-only map</b> <span class="tag">dropped</span><br>Change blindness, and you can never see a
+          whole path at once.</td></tr>
+    </table>
+
+    <h2>4. Milestone 2: testing the design on real data</h2>
+    <p>We drew every Milestone 1 view with all of the real data in matplotlib. Several of them broke, and the fixes
+      shaped the current design.</p>
+    <figure>
+      <img src="img/process/dashboard.png" alt="Milestone 2 static dashboard built from real data">
+      <figcaption>Milestone 2 prototype: six views drawn from real data, with interactions mocked up.</figcaption>
+    </figure>
+
+    <h3>F1 · All 25 growth curves on one chart <span class="tag">failed</span></h3>
+    <figure><img src="img/process/fail_spaghetti.png" alt="25 overlapping growth curves"></figure>
+    <p>There were too many series on one linear axis, and the low-count lines piled up near zero. <b>Revision:</b> one panel
+      per cell line on a log<sub>2</sub> axis, so exponential growth is a straight line and its slope is the growth rate.</p>
+
+    <h3>F2 · Small multiples on a linear axis with movement strips <span class="tag">revised</span></h3>
+    <div class="pair">
+      <figure><img src="img/process/fail_smallmult_linear.png" alt="25 small multiples with linear axis"><figcaption>before</figcaption></figure>
+      <figure><img src="img/process/rev_growth.png" alt="growth by cell line, log axis"><figcaption>after: View A</figcaption></figure>
+    </div>
+    <p>The shared linear axis flattened most curves. Spikes in the movement strips also sat in separate boxes, so
+      we didn't notice they line up across fields. <b>Revision:</b> the strips became their own aligned heatmap (View B).</p>
+    <figure><img src="img/process/rev_shift.png" alt="stage shift heatmap"><figcaption>View B: stage shifts show up as vertical stripes across a whole cell line.</figcaption></figure>
+
+    <h3>F3 · Raw track map <span class="tag">failed</span></h3>
+    <div class="pair">
+      <figure><img src="img/process/fail_map_raw.png" alt="raw track map with streaks"><figcaption>before: raw positions</figcaption></figure>
+      <figure><img src="img/process/rev_map.png" alt="drift-corrected track map"><figcaption>after: drift-corrected, gray context</figcaption></figure>
+    </div>
+    <p>The long horizontal streaks were a stage jump at frame 345, not cell movement. Also, 305 paths drawn at the same
+      weight made a hairball. <b>Revision:</b> remove the shared shift, draw all paths as thin gray context, and color
+      only the brushed paths and the selected lineage.</p>
+
+    <h3>F4 · Box + one dot per track, by cell line <span class="tag">revised</span></h3>
+    <div class="pair">
+      <figure><img src="img/process/fail_box_dots.png" alt="box plot with 5,875 dots"><figcaption>before</figcaption></figure>
+      <figure><img src="img/process/rev_speed_end.png" alt="speed and endings per sequence"><figcaption>after: Views E and F</figcaption></figure>
+    </div>
+    <p>With 5,875 dots, the jitter band became a solid block. <b>Revision:</b> one row per sequence, compact boxes with dots
+      only for outliers, drift-corrected speed, and a new endings view (F) on the same rows.</p>
+
+    <h3>F5 · Direction rose <span class="tag">dropped</span></h3>
+    <figure><img src="img/process/fail_rose.png" alt="four nearly round direction roses"></figure>
+    <p>All four roses were nearly round. A stage shift lasts 2 of 385 frames, so pooling over time hides it. View B shows the same signal over time.</p>
+
+    <h3>F6 · Labeled node-link tree <span class="tag">revised</span></h3>
+    <div class="pair">
+      <figure><img src="img/process/fail_tree.png" alt="labeled node-link tree, overlapping"><figcaption>before</figcaption></figure>
+      <figure><img src="img/process/rev_tree.png" alt="unlabeled dendrogram in hours"><figcaption>after: View D</figcaption></figure>
+    </div>
+    <p>Lineage 1592 has 76 branches, so labels and node circles overlapped. <b>Revision:</b> an unlabeled elbow dendrogram
+      with time in hours (IDs on hover).</p>
+
+    <h2>5. Insights so far</h2>
+    <ul>
+      <li><b>Stage shifts hit a whole cell line at once:</b> all 9 MCF10A fields at frame 345, all 6 MDA-MB-231 fields at
+        frame 49, and U87 repeatedly between 66 and 72 h. That is a plate-level microscope event, not cell behavior.</li>
+      <li><b>Slow cultures:</b> MDA-MB-231 F3 (1.1× over 96 h), F4 (1.0×) and U87 F4 (0.9×), compared with 15–76× for MCF10A.
+        MCF10A F108 has no annotated cells until 61 h.</li>
+      <li><b>U87 is the fastest line</b> (median 25.7 px per 15 min) and MDA-MB-231 the slowest (12.0). U87 cells mostly leave
+        the image (45–67% of segments).</li>
+      <li>MDA-MB-231 and U87 have the highest share of cells <b>lost mid-image</b> (20–31%). These are candidates for apoptosis
+        or annotation gaps.</li>
+    </ul>
+
+    <h2>6. Milestone 3: the D3 implementation</h2>
+    <p>The dashboard on the <a href="index.html">first page</a> implements all six views from Milestone 2 in D3.js v7,
+      with the linked interactions planned in Milestone 2:</p>
+    <table>
+      <tr><th>Action</th><th>Effect</th></tr>
+      <tr><td>Cell-line chips (header)</td><td>hide a line's panel in A and its rows in B, E and F</td></tr>
+      <tr><td>Click a line in A, or a row label in B</td><td>select that sequence everywhere and load its paths in C</td></tr>
+      <tr><td>Hover A or B</td><td>tooltip, plus the same frame marked in both views</td></tr>
+      <tr><td>Brush the time axis in B</td><td>C only draws path pieces inside that window</td></tr>
+      <tr><td>Brush the speed axis in E</td><td>segments in that range are colored in C; outlier dots in range grow</td></tr>
+      <tr><td>Click an outlier in E, or a path in C</td><td>open that lineage in D</td></tr>
+      <tr><td>Hover a path in C or a branch in D</td><td>highlight it in both views and mark its time span on B's selected row</td></tr>
+      <tr><td>Click a bar segment in F</td><td>show only segments with that ending in C, with their end marks</td></tr>
+      <tr><td>Raw positions toggle (C)</td><td>switch between raw and drift-corrected coordinates</td></tr>
+      <tr><td>Reset</td><td>clear every selection and brush</td></tr>
+    </table>
+    <h3>Implementation decisions</h3>
+    <ul>
+      <li><b>Static site, precomputed data.</b> GitHub Pages only serves static files, so <code>scripts/export_data.py</code> turns the
+        Milestone 2 tables into JSON: one 0.5 MB overview file, plus one path file per sequence (27–590 KB) that is only
+        loaded when that sequence is selected.</li>
+      <li><b>Canvas for the heatmap.</b> View B has about 9,600 cells, so it is drawn on a canvas, with axes, labels and
+        brush in SVG on top.</li>
+      <li><b>Shared row layout.</b> B, E and F use one row scale, so a sequence can be read straight across all three.</li>
+      <li><b>Wide invisible hit areas</b> on thin lines in A, C and D, so single paths can be hovered and clicked.</li>
+    </ul>
+    <p class="todo"><b>To add:</b> screenshots of the D3 version (one per interaction above is ideal), anything that
+      changed while implementing, and the feedback from the Milestone 3 checkpoint.</p>
+
+    <h3>Still open</h3>
+    <ul>
+      <li>Flag a stage shift when most fields of the same line are flagged at that frame. This would catch the frame-49
+        shift in MDA-MB-231 F3/F5, which have fewer than 10 cells.</li>
+      <li>A frame slider / play button for C (planned in Milestone 1); for now, the time brush in B does this job.</li>
+      <li>Keyboard access and screen-reader text for the views.</li>
+    </ul>
+
+    <h2>7. Evaluation</h2>
+    <p class="todo"><b>For the final delivery:</b> what did we learn about the data from the finished dashboard, how well
+      does it answer the questions in Section 1, and what would we improve with more time?</p>
+
+    <h2>AI use</h2>
+    <p class="todo"><b>Team to write.</b> As in earlier milestones, say how AI tools were used. For this milestone,
+      Claude (Anthropic) generated the D3 code, the JSON export script, and this draft of the process book, based on our
+      Milestone 1–2 designs. Note what the team reviewed, changed, and decided.</p>
+  </article>
+</body>
+</html>
