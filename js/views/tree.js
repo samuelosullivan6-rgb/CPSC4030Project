@@ -1,5 +1,5 @@
 // View D — lineage dendrogram (time runs down) + detail panel for the selected Track_ID.
-import { INK, DARK_RED, END_COL, RED, TEXT_COL, lineOf, hours, box, showTip, hideTip, fmt1, MAX_HOURS } from "../common.js";
+import { INK, DARK_RED, END_COL, RED, TEXT_COL, lineOf, hours, box, showTip, hideTip, fmt1, MAX_HOURS, describe } from "../common.js";
 
 /** x = leaf order, y = frames. Mirrors lineage_layout() in build/common.py. */
 function layout(segs, byId) {
@@ -27,7 +27,7 @@ export function treeView(section, app) {
   let nodes = [], sx, sy;
 
   function draw() {
-    const { w, h } = box(el);
+    let { w, h } = box(el);
     svg.attr("width", w).attr("height", h).selectAll("*").remove();
     const data = app.seqData(), { seq, track } = app.state;
     const segs = data && track != null ? data.segments.filter(s => s.track === track) : [];
@@ -41,6 +41,11 @@ export function treeView(section, app) {
     }
     const L = layout(segs, app.data.segById);
     nodes = L.nodes;
+    const f1 = n => n.m ? n.m.f1 : n.s.f0 + n.s.x.length - 1;
+    // fill the detail panel first: it changes how much height the tree gets
+    detail(segs, f1);
+    ({ w, h } = box(el));
+    svg.attr("width", w).attr("height", h);
     const m = { l: 30, r: 10, t: 8, b: 6 };
     sx = d3.scaleLinear([-0.8, Math.max(1, L.leaves - 0.2)], [m.l, w - m.r]);
     sy = d3.scaleLinear([0, MAX_HOURS], [m.t, h - m.b]);
@@ -49,7 +54,6 @@ export function treeView(section, app) {
       .call(d3.axisLeft(sy).tickValues([0, 24, 48, 72, 96]).tickSizeOuter(0));
     svg.append("text").attr("class", "axis-label").attr("transform", `translate(9,${m.t}) rotate(-90)`).attr("text-anchor", "end").text("hours");
 
-    const f1 = n => n.m ? n.m.f1 : n.s.f0 + n.s.x.length - 1;
     const g = svg.append("g");
     const xOf = new Map(nodes.map(n => [n.s.id, n.x]));
     // division bars
@@ -81,8 +85,10 @@ export function treeView(section, app) {
       .on("mouseleave", () => { hideTip(); app.set({ hoverSeg: null }); });
 
     title.html(`<b style="color:${TEXT_COL[lineOf(seq)]}">${seq}</b> · Track ${track}`);
-    detail(segs, f1);
     hover();
+    const lost = segs.filter(s => s.ending === 3).length;
+    describe(svg, `Family tree of lineage ${track} in ${seq}, time running down in hours: ${segs.length} branches and ` +
+      `${nodes.filter(n => n.kids.length).length} divisions` + (lost ? `; ${lost} branches are lost mid-image (possible apoptosis or annotation gap).` : "."));
   }
 
   function hover() {

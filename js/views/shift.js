@@ -1,5 +1,5 @@
 // View B — stage-shift timeline: sequences x time heatmap of the shared movement of all cells.
-import { COL, TEXT_COL, RED, DARK_RED, short, lineOf, hours, box, showTip, hideTip, matrixRows, groupBreaks, fmt1, MAX_HOURS } from "../common.js";
+import { COL, TEXT_COL, RED, DARK_RED, short, lineOf, hours, box, showTip, hideTip, matrixRows, groupBreaks, fmt1, MAX_HOURS, describe } from "../common.js";
 
 const VMAX = 120; // px; larger shifts share the darkest color
 const color = d3.scaleLinear([0, 30, 60, 90, VMAX], ["#ffffff", "#f3d3cf", "#e0806f", "#c8322b", "#7a1410"]).clamp(true);
@@ -25,6 +25,7 @@ export function shiftView(el, app) {
     const { w, h } = box(el);
     const dpr = window.devicePixelRatio || 1;
     seqs = app.visibleSeqs();
+    if (w < 150 || h < 120) return;   // pane still laying out
     x = d3.scaleLinear([0, MAX_HOURS], [LEFT, w - 12]);
     y = matrixRows(seqs, h);
 
@@ -73,6 +74,12 @@ export function shiftView(el, app) {
       .on("click", (e, s) => app.set({ seq: s, track: null, ending: null, hoverSeg: null }));
 
     legend(w);
+    lineWideShifts(seqs);
+    describe(svg, "Heatmap of the shared movement of all cells in each frame, one row per sequence grouped by cell line, " +
+      "time on the horizontal axis. Microscope stage shifts appear as dark vertical stripes that hit most fields of a cell line " +
+      "in the same frame, for example all 9 MCF10A fields at about 86 hours and 4 of 6 MDA-MB-231 fields at about 12 hours. " +
+      "Hatched gray marks frames with no annotated cells.");
+    canvas.attr("aria-hidden", "true");
 
     // ---- brush for a time window (sets C's frame range)
     brush = d3.brushX().extent([[x(0), y.range()[0]], [x(MAX_HOURS), y.range()[1]]])
@@ -89,20 +96,53 @@ export function shiftView(el, app) {
     marks();
   }
 
+  /** ▼ marks above the heatmap where most fields of one cell line were flagged in the same frame. */
+  function lineWideShifts(rows) {
+    const g = svg.append("g");
+    for (const [line, ss] of d3.groups(rows, lineOf)) {
+      const n = d3.rollup(ss.flatMap(s => app.data.frames[s].flag), v => v.length, f => f);
+      const frames = [...n.keys()].filter(f => n.get(f) >= Math.max(2, Math.ceil(ss.length / 2))).sort(d3.ascending);
+      const events = [];
+      for (const f of frames) {
+        const last = events[events.length - 1];
+        if (last && f - last.f1 <= 2) { last.f1 = f; last.k = Math.max(last.k, n.get(f)); }
+        else events.push({ f0: f, f1: f, k: n.get(f) });
+      }
+      const ev = g.selectAll(null).data(events).join("g")
+        .attr("transform", e => `translate(${x(hours(e.f0))},${y.range()[0] - 8})`);
+      ev.append("path").attr("d", "M-4,-5 L4,-5 L0,1 Z").attr("fill", TEXT_COL[line]);
+      ev.append("text").attr("class", "ev-label").attr("x", 5).attr("y", -1).attr("font-size", 10).style("fill", TEXT_COL[line])
+        .text(e => `${e.k}/${ss.length}`);
+      ev.append("title").text(e => `${line}: ${e.k} of ${ss.length} fields shift at frame ${e.f0}` +
+        (e.f1 > e.f0 ? `–${e.f1}` : "") + ` (${fmt1(hours(e.f0))} h)`);
+    }
+    // keep labels from overlapping: show the larger n/N where two are within 30 px (hover ▼ for all)
+    const labs = g.selectAll("g").nodes().map(n => ({ n, x: x(hours(d3.select(n).datum().f0)), k: d3.select(n).datum().k }))
+      .sort((a, b) => b.k - a.k);
+    const shown = [];
+    for (const l of labs) {
+      if (shown.some(s => Math.abs(s - l.x) < 30)) d3.select(l.n).select("text").remove();
+      else shown.push(l.x);
+    }
+  }
+
   function legend(w) {
-    const lw = Math.min(110, w * 0.2), lx = w - 12 - lw - 92, ly = 6;
+    const lw = Math.min(110, w * 0.2), lx = LEFT, ly = 4;
     const g = svg.append("g").attr("transform", `translate(${lx},${ly})`);
     const grad = svg.append("defs").append("linearGradient").attr("id", "shiftGrad");
     d3.range(0, 1.01, 0.25).forEach(t => grad.append("stop").attr("offset", t).attr("stop-color", color(t * VMAX)));
     g.append("rect").attr("width", lw).attr("height", 8).attr("fill", "url(#shiftGrad)").attr("stroke", "#bbb").attr("stroke-width", 0.5);
-    g.selectAll("text.t").data([0, 60, VMAX]).join("text").attr("class", "note").attr("font-size", 9.5)
+    g.selectAll("text.t").data([0, 60, VMAX]).join("text").attr("class", "note").attr("font-size", 10)
       .attr("x", v => (v / VMAX) * lw).attr("y", 18).attr("text-anchor", (v, i) => ["start", "middle", "end"][i])
       .text(v => v === VMAX ? "≥120 px" : v);
     const pat = svg.select("defs").append("pattern").attr("id", "hatch").attr("width", 6).attr("height", 6).attr("patternUnits", "userSpaceOnUse");
     pat.append("rect").attr("width", 6).attr("height", 6).attr("fill", "#ece9e3");
     pat.append("path").attr("d", "M0,6 L6,0").attr("stroke", "#a9a59c").attr("stroke-width", 0.8);
     g.append("rect").attr("x", lw + 12).attr("width", 14).attr("height", 8).attr("fill", "url(#hatch)");
-    g.append("text").attr("class", "note").attr("font-size", 9.5).attr("x", lw + 30).attr("y", 8).text("no cells");
+    g.append("text").attr("class", "note").attr("font-size", 10).attr("x", lw + 30).attr("y", 8).text("no cells");
+    g.append("path").attr("transform", `translate(${lw + 92},4)`).attr("d", "M-4,-4 L4,-4 L0,2 Z").attr("fill", "#5f5c55");
+    g.append("text").attr("class", "note").attr("font-size", 10).attr("x", lw + 99).attr("y", 8)
+      .text("n/N fields of a line shift together (stage moved)");
   }
 
   function rowAt(py) {

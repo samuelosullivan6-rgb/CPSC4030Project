@@ -63,7 +63,7 @@ const app = {
 function renderChips() {
   const chips = d3.select("#chips").selectAll("button").data(app.data.lines).join("button")
     .attr("class", "chip")
-    .style("--c", l => COL[l])
+    .style("--c", l => TEXT_COL[l])   // darker text-safe hues: white chip text stays >= 4.5:1
     .attr("aria-pressed", l => !app.state.hidden.has(l))
     .text(l => l)
     .on("click", (e, l) => {

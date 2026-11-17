@@ -1,5 +1,5 @@
 // View A — growth: cell count over time, one panel per cell line, log2 y-axis.
-import { COL, TEXT_COL, RED, short, lineOf, hours, box, showTip, hideTip, rollingMedian, MAX_HOURS } from "../common.js";
+import { COL, TEXT_COL, RED, short, lineOf, hours, box, showTip, hideTip, rollingMedian, MAX_HOURS, describe } from "../common.js";
 
 export function growthView(el, app) {
   const svg = d3.select(el).append("svg");
@@ -22,7 +22,7 @@ export function growthView(el, app) {
     const lines = app.data.lines.filter(l => !app.state.hidden.has(l));
     const cols = lines.length > 1 ? 2 : 1, rows = Math.ceil(lines.length / cols);
     const pw = w / cols, ph = h / rows;
-    const m = { l: 34, r: 30, t: 16, b: 26 };
+    const m = { l: 34, r: 66, t: 16, b: 26 };   // wide right margin for end labels like "F3 ×1.0 slow"
 
     panels = lines.map((line, k) => {
       const c = k % cols, r = Math.floor(k / cols);
@@ -63,14 +63,16 @@ export function growthView(el, app) {
         .on("mouseleave", () => { hideTip(); app.set({ hoverFrame: null }); })
         .on("click", (e, s) => app.set({ seq: s, track: null, ending: null, hoverSeg: null }));
 
-      // end labels, nudged apart in log space
-      const ends = seqs.map(s => { const p = series.get(s); const last = p[p.length - 1]; return { s, h: last.h, v: Math.log2(last.y) }; })
-        .sort((a, b) => a.v - b.v);
+      // end labels, nudged apart in log space; cultures that barely grow get their fold change
+      const ends = seqs.map(s => {
+        const p = series.get(s), last = p[p.length - 1], fold = last.y / p[0].y;
+        return { s, h: last.h, v: Math.log2(last.y), slow: fold < 1.5 ? `×${fold.toFixed(1)}` : null };
+      }).sort((a, b) => a.v - b.v);
       const gap = Math.log2(300 / 0.8) * 11 / (ph - m.t - m.b);
       for (let i = 1; i < ends.length; i++) ends[i].v = Math.max(ends[i].v, ends[i - 1].v + gap);
       g.append("g").selectAll("text").data(ends).join("text").attr("class", "end-label")
         .attr("x", d => x(d.h) + 3).attr("y", d => y(2 ** d.v)).attr("dy", "0.32em")
-        .attr("font-size", 9.5).style("cursor", "pointer").text(d => short(d.s))
+        .attr("font-size", 10.5).style("cursor", "pointer").text(d => d.slow ? `${short(d.s)} ${d.slow} slow` : short(d.s))
         .on("click", (e, d) => app.set({ seq: d.s, track: null, ending: null, hoverSeg: null }));
 
       g.append("line").attr("class", "rule").attr("y1", m.t).attr("y2", ph - m.b)
@@ -79,6 +81,10 @@ export function growthView(el, app) {
     });
     style();
     rule();
+    const slow = panels.flatMap(p => p.g.selectAll("text.end-label").data().filter(d => d.slow).map(d => `${d.s} (${d.slow})`));
+    describe(svg, `Line charts of cell count over time on a log-2 axis, one panel per cell line (${lines.join(", ")}). ` +
+      `Straight lines mean exponential growth; most MCF10A and HEK293T fields grow many-fold` +
+      (slow.length ? `, while ${slow.join(", ")} barely grow.` : "."));
   }
 
   function style() {

@@ -1,5 +1,5 @@
 // View C — track map: cell paths of the selected sequence in image coordinates.
-import { COL, TEXT_COL, RED, DARK_RED, INK, GRAY, END_COL, IMG_W, IMG_H, lineOf, hours, box, showTip, hideTip, fmt1 } from "../common.js";
+import { COL, TEXT_COL, RED, DARK_RED, INK, GRAY, END_COL, IMG_W, IMG_H, lineOf, hours, box, showTip, hideTip, fmt1, describe } from "../common.js";
 
 const END_SYMBOL = { 2: d3.symbolTriangle, 3: d3.symbolX };   // left image, lost mid-image
 
@@ -34,11 +34,12 @@ export function mapView(section, app) {
         .text(seq ? "loading paths…" : "select a sequence in A, B, E or F");
       return;
     }
+    if (w < 120 || h < 120) return;   // pane still laying out; the ResizeObserver redraws
     paths = segPaths(data);
     const all = paths.flatMap(d => d.pts);
     const x0 = Math.min(0, d3.min(all, p => p[0]) ?? 0) - 5, x1 = Math.max(IMG_W, d3.max(all, p => p[0]) ?? 0) + 5;
     const y0 = Math.min(0, d3.min(all, p => p[1]) ?? 0) - 5, y1 = Math.max(IMG_H, d3.max(all, p => p[1]) ?? 0) + 5;
-    const m = { l: 34, r: 8, t: 6, b: 22 };
+    const m = { l: 46, r: 8, t: 6, b: 32 };
     const k = Math.min((w - m.l - m.r) / (x1 - x0), (h - m.t - m.b) / (y1 - y0));
     const ox = m.l + ((w - m.l - m.r) - k * (x1 - x0)) / 2, oy = m.t;
     sx = d3.scaleLinear([x0, x1], [ox, ox + k * (x1 - x0)]);
@@ -49,6 +50,9 @@ export function mapView(section, app) {
       .call(d3.axisBottom(sx).ticks(Math.max(2, Math.floor(k * (x1 - x0) / 70))).tickSizeOuter(0));
     svg.append("g").attr("class", "axis").attr("transform", `translate(${sx(x0)},0)`)
       .call(d3.axisLeft(sy).ticks(Math.max(2, Math.floor(k * (y1 - y0) / 50))).tickSizeOuter(0));
+    svg.append("text").attr("class", "axis-label").attr("x", sx(x1)).attr("y", sy(y1) + 30).attr("text-anchor", "end").text("x (px)");
+    svg.append("text").attr("class", "axis-label").attr("transform", `translate(${sx(x0) - 34},${sy(y0)}) rotate(-90)`)
+      .attr("text-anchor", "end").text("y (px)");
     svg.append("rect").attr("x", sx(0)).attr("y", sy(0)).attr("width", sx(IMG_W) - sx(0)).attr("height", sy(IMG_H) - sy(0))
       .attr("fill", "none").attr("stroke", "#999").attr("stroke-width", 0.8)
       .attr("stroke-dasharray", x0 < -10 || y0 < -10 || x1 > IMG_W + 10 || y1 > IMG_H + 10 ? "4,3" : null);
@@ -111,6 +115,12 @@ export function mapView(section, app) {
       (app.state.window ? ` · ${fmt1(hours(app.state.window[0]))}–${fmt1(hours(app.state.window[1]))} h` : "") +
       (app.state.raw ? " · <b>raw</b>" : " · drift-corrected"));
     legend(lc);
+    const lost = paths.filter(d => d.s.ending === 3).length;
+    describe(svg, `Map of ${paths.length} cell paths in sequence ${seq}, in image pixel coordinates` +
+      (app.state.raw ? " (raw positions)" : " (corrected for microscope stage shifts)") +
+      (track != null ? `. Lineage ${track} is drawn in red.` : ".") +
+      (brush ? ` ${nb} paths fall in the brushed speed range.` : "") +
+      ` ${lost} cells are lost mid-image (possible apoptosis or annotation gap).`);
   }
 
   function hover() {
@@ -133,7 +143,7 @@ export function mapView(section, app) {
       [mk(`<circle r="3.5" fill="${INK}"/>`), "start"],
       [mk(`<circle r="3" fill="#fff" stroke="${INK}"/>`), "at video end"],
       [mk(`<path transform="rotate(90)" d="${d3.symbol(d3.symbolTriangle, 30)()}" fill="${END_COL[2]}"/>`), "left image"],
-      [mk(`<path d="${d3.symbol(d3.symbolX, 40)()}" fill="${END_COL[3]}" stroke="${END_COL[3]}"/>`), "lost mid-image"],
+      [mk(`<path d="${d3.symbol(d3.symbolX, 40)()}" fill="${END_COL[3]}" stroke="${END_COL[3]}"/>`), "lost mid-image (apoptosis or gap?)"],
     ];
     if (app.state.ending != null) items.splice(2, 0, [sw(END_COL[app.state.ending], 1.8), `ending: ${app.data.endings[app.state.ending]}`]);
     key.html(items.map(([s, t]) => `<span>${s}${t}</span>`).join(""));

@@ -9,7 +9,12 @@ export const HOURS_PER_FRAME = 0.25;
 export const MAX_HOURS = 96.25;
 
 // Rows of the sequence matrix (views B, E, F) share these margins so they line up exactly.
-export const MATRIX = { top: 30, bottom: 34, rowPad: 0.18 };
+export const MATRIX = { top: 42, bottom: 34, rowPad: 0.18 };
+
+/** Screen-reader text for a chart: role=img + a label stating its main finding. */
+export function describe(sel, text) {
+  sel.attr("role", "img").attr("aria-label", text);
+}
 
 export const hours = f => f * HOURS_PER_FRAME;
 export const short = seq => seq.split(" ")[1];

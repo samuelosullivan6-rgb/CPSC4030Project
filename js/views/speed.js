@@ -1,5 +1,5 @@
 // View E — speed by sequence: compact box plot of drift-corrected mean step per cell segment.
-import { COL, TEXT_COL, RED, lineOf, box, showTip, hideTip, matrixRows, groupBreaks, fmt1 } from "../common.js";
+import { COL, TEXT_COL, RED, lineOf, box, showTip, hideTip, matrixRows, groupBreaks, fmt1, describe } from "../common.js";
 
 const XMAX = 75;
 
@@ -23,6 +23,7 @@ export function speedView(el, app) {
     if (!stats) compute();
     const { w, h } = box(el);
     seqs = app.visibleSeqs();
+    if (w < 150 || h < 120) return;   // pane still laying out
     x = d3.scaleLinear([0, XMAX], [10, w - 12]);
     y = matrixRows(seqs, h);
     svg.attr("width", w).attr("height", h).selectAll("*").remove();
@@ -35,7 +36,13 @@ export function speedView(el, app) {
       .attr("x1", 0).attr("x2", w).attr("y1", s => y(s) - y.step() * y.paddingInner() / 2)
       .attr("y2", s => y(s) - y.step() * y.paddingInner() / 2).attr("stroke", "#ddd");
     svg.append("text").attr("class", "note").attr("x", 10).attr("y", 12)
-      .text(`segments ≥ ${app.data.minFrames / 4} h only`);
+      .text("segment = one cell from birth/entry");
+    svg.append("text").attr("class", "note").attr("x", 10).attr("y", 25)
+      .text(`to division/exit · only segments ≥ ${app.data.minFrames / 4} h`);
+    const med = l => d3.median(app.data.segs.filter(d => lineOf(d.seq) === l && d.n >= app.data.minFrames && d.speed != null), d => d.speed);
+    const lines = [...new Set(seqs.map(lineOf))];
+    describe(svg, "Box plots of mean step per cell segment, in pixels per 15 minutes, one row per sequence. " +
+      lines.map(l => `${l} median ${fmt1(med(l))}`).join(", ") + ". Dots are outlier segments.");
 
     brush = d3.brushX().extent([[x(0), y.range()[0]], [x(XMAX), y.range()[1]]])
       .on("end", ({ selection, sourceEvent }) => {
@@ -68,11 +75,13 @@ export function speedView(el, app) {
   }
 
   function dotStyle(range = app.state.brush) {
+    if (!gDots) return;
     gDots.attr("r", d => range && d.speed >= range[0] && d.speed <= range[1] ? 3.6 : 2)
       .attr("stroke", d => d.seq === app.state.seq && d.track === app.state.track ? "#000" : "none");
   }
 
   function style() {
+    if (!gBoxes) return;
     const c = s => s === app.state.seq ? RED : COL[lineOf(s)];
     gBoxes.selectAll("line.whisker").attr("stroke", c);
     gBoxes.selectAll("rect.iqr").attr("fill", c).attr("fill-opacity", s => s === app.state.seq ? 0.6 : 0.4).attr("stroke", c);
